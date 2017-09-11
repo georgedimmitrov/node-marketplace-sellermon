@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const deepPopulate = require('mongoose-deep-populate')(mongoose);
 
 const OrderSchema = new Schema({
   buyer: {
@@ -15,17 +16,15 @@ const OrderSchema = new Schema({
     ref: 'Gig'
   },
   messages: [{
-    message: { type: String },
-    creator: {
       type: Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    date: { type: Date }
+      ref: 'Message'
   }],
   created: {
     type: Date,
     default: Date.now
   }
 });
+
+OrderSchema.plugin(deepPopulate);
 
 module.exports = mongoose.model('Order', OrderSchema);
