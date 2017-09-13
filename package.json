@@ -9,6 +9,7 @@
   "author": "Georgi Dimitrov",
   "license": "ISC",
   "dependencies": {
+    "algoliasearch": "^3.24.3",
     "async": "^2.3.0",
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.17.1",
@@ -20,6 +21,7 @@
     "express-session": "^1.15.2",
     "hbs": "^4.0.1",
     "mongoose": "^4.9.4",
+    "mongoose-algolia": "^1.7.1",
     "mongoose-deep-populate": "^3.0.0",
     "morgan": "^1.8.1",
     "passport": "^0.3.2",

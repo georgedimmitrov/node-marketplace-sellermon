@@ -1,6 +1,8 @@
 const router = require('express').Router();
+const async = require('async');
 const Gig = require('../models/gig');
 const Order = require('../models/order');
+const User = require('../models/user');
 const config = require('../config/secret');
 const stripe = require('stripe')(config.stripeSecret);
 
@@ -13,6 +15,32 @@ router.get('/checkout/single_package/:id', (req, res) => {
     req.session.price = totalPrice;
     res.render('checkout/single_package', { gig, totalPrice });
   });
+});
+
+router.get('/checkout/process_cart', (req, res) => {
+  let totalPrice = 0;
+
+  User.findOne({ _id: req.user._id })
+    .populate('cart')
+    .exec((err, user) => {
+      let price = 0;
+      let cartIsEmpty = true;
+
+      if (user.cart.length > 0) {
+        user.cart.map(item => {
+          price += item.price;
+        });
+
+        totalPrice = price + fee;
+      } else {
+        cartIsEmpty = false;
+      }
+
+      req.session.price = totalPrice;
+      req.session.gig = user.cart;
+
+      res.render('order/cart', { foundUser: user, totalPrice, sub_total: price, cartIsEmpty });
+    });
 });
 
 router
@@ -95,6 +123,48 @@ router.get('/users/:id/orders', (req, res) => {
     .exec((err, orders) => {
       res.render('order/order-buyer', { orders });
     });
+});
+
+// Shopping Cart
+router.post('/add-to-cart', (req, res) => {
+  const gigId = req.body.gig_id;
+
+  User.update(
+    {
+      _id: req.user._id
+    },
+    {
+      $push: { cart: gigId }
+    }, (err, count) => {
+      res.json('Added to cart.');
+    }
+  );
+});
+
+router.post('/remove-item', (req, res) => {
+  const gigId = req.body.gig_id;
+  let totalPrice = 0;
+
+  async.waterfall([
+    callback => {
+      Gig.findOne({ _id: gigId }, (err, gig) => {
+        callback(err, gig);
+      });
+    },
+    (gig, callback) => {
+      User.update(
+        {
+          _id: req.user._id
+        },
+        {
+          $pull: { cart: gigId }
+        }, (err, count) => {
+          totalPrice = req.session.price - gig.price;
+          res.json({ totalPrice, price: gig.price });
+        }
+      );
+    }
+  ]);
 });
 
 module.exports = router;

@@ -11,7 +11,10 @@ const UserSchema = new Schema({
   about: String,
   gigs: [{
      type: Schema.Types.ObjectId, ref: 'Gig'
-  }]
+  }],
+  cart: [{
+    type: Schema.Types.ObjectId, ref: 'Gig'
+ }]
 });
 
 UserSchema.pre('save', function(next) {

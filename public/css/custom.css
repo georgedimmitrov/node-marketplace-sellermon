@@ -126,3 +126,7 @@ select {
 	color: green;
 	text-decoration: underline;
 }
+
+#promocodeResponse {
+	margin-top: 5px;
+}
