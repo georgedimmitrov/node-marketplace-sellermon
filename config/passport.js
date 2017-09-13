@@ -1,5 +1,8 @@
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+const FacebookStrategy = require('passport-facebook').Strategy;
+
+const config = require('./secret');
 
 const User = require('../models/user');
 
@@ -19,7 +22,7 @@ passport.use('local-login', new LocalStrategy({
   usernameField : 'email',
   passwordField : 'password',
   passReqToCallback : true // allows us to pass back the entire request to the callback
-}, function(req, email, password, done) { // callback with email and password from our form
+}, (req, email, password, done) => { // callback with email and password from our form
 
   // find a user whose email is the same as the forms email
   // we are checking to see if the user trying to login already exists
@@ -39,7 +42,33 @@ passport.use('local-login', new LocalStrategy({
     // all is well, return successful user
     return done(null, user);
   });
+}));
 
+passport.use(new FacebookStrategy({
+  clientID: config.FACEBOOK_ID,
+  clientSecret: config.FACEBOOK_SECRET,
+  callbackURL: 'http://localhost:3000/auth/facebook/callback',
+  profileFields: ['id', 'displayName', 'email']
+}, (accessToken, refreshToken, profile, next) => {
+  User.findOne({ facebookId: profile.id }, (err, user) => {
+    if (user) {
+      return next(err, user);
+    }
+
+    const newUser = new User();
+    newUser.email = profile._json.email;
+    newUser.facebookId = profile.id;
+    newUser.name = profile.displayName;
+    newUser.photo = `http://graph.facebook.com/${profile.id}/picture?type=large`;
+
+    newUser.save(err => {
+      if (err) {
+        throw err;
+      }
+      console.log('newUser', newUser);
+      next(err, newUser);
+    });
+  });
 }));
 
 

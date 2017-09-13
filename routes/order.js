@@ -86,6 +86,64 @@ router
       });
   });
 
+  router
+  .route('/payment/cart')
+  .get((req, res) => {
+    res.render('checkout/payment');
+  })
+  .post((req, res, next) => {
+    const gigs = req.session.gig;
+    let price = req.session.price;
+    price *= 100;
+
+    stripe.customers
+      .create({
+        email: req.user.email
+      })
+      .then(customer => {
+        return stripe.customers.createSource(customer.id, {
+          source: req.body.stripeToken
+        });
+      })
+      .then(source => {
+        return stripe.charges.create({
+          amount: price,
+          currency: 'usd',
+          customer: source.customer
+        });
+      })
+      .then(charge => {
+        // New charge created on a new customer
+        gigs.map(gig => {
+          const order = new Order();
+          order.buyer = req.user._id;
+          order.seller = gig.owner;
+          order.gig = gig._id;
+          order.save(err => {
+            req.session.gig = null;
+            req.session.price = null;
+          });
+        });
+
+        // Empty out user's cart
+        User.update(
+          {
+            _id: req.user._id
+          },
+          {
+            $set: { cart: [] }
+          }, (err, updatedCart) => {
+            if (updatedCart) {
+              res.redirect(`/users/${req.user._id}/orders`);
+            }
+          }
+        );
+      })
+      .catch(err => {
+        // Deal with an error
+      });
+  });
+
 // Chat Page
 router.get('/users/:userId/orders/:orderId', (req, res) => {
   req.session.orderId = req.params.orderId;

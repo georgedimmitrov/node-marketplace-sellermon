@@ -36,17 +36,24 @@ router.route('/signup')
 
 /* LOGIN ROUTE */
 router.route('/login')
-
   .get((req, res, next) => {
     if (req.user) return res.redirect('/');
     res.render('accounts/login', { message: req.flash('loginMessage')});
   })
-
   .post(passport.authenticate('local-login', {
     successRedirect : '/', // redirect to the secure profile section
     failureRedirect : '/login', // redirect back to the signup page if there is an error
     failureFlash : true // allow flash messages
   }));
+
+// Facebook Login/Registration
+router.get('/auth/facebook', passport.authenticate('facebook', { scope: 'email' }));
+router.get('/auth/facebook/callback', passport.authenticate('facebook', {
+  successRedirect: '/profile',
+  failureRedirect: '/login',
+  failureFlash: true
+}));
+
 
 /* PROFILE ROUTE */
 router.get('/profile', passportConfig.isAuthenticated, (req, res, next) => {
